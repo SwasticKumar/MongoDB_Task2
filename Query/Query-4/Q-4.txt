@@ -1,0 +1,31 @@
+db.getCollection('codekata').aggregate(
+  [
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: 'userId',
+        as: 'userDetails'
+      }
+    },
+    { $unwind: '$userDetails' },
+    {
+      $group: {
+        _id: {
+          userId: '$userId',
+          userName: '$userDetails.userName'
+        },
+        problems_solved: { $sum: 1 }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        problems_solved: 1,
+        userId: '$_id.userId',
+        userName: '$_id.userName'
+      }
+    }
+  ],
+  { maxTimeMS: 60000, allowDiskUse: true }
+);

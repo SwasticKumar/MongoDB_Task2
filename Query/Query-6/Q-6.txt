@@ -1,0 +1,43 @@
+db.getCollection('attendance').aggregate(
+  [
+    {
+      $lookup: {
+        from: 'topics',
+        localField: 'topicId',
+        foreignField: 'topicId',
+        as: 'absent'
+      }
+    },
+    {
+      $lookup: {
+        from: 'tasks',
+        localField: 'userId',
+        foreignField: 'userId',
+        as: 'task-notSubmitted'
+      }
+    },
+    { $unwind: '$task-notSubmitted' },
+    { $unwind: '$absent' },
+    {
+      $match: {
+        attended: false,
+        'absent.topicDate': {
+          $gte: '2020-10-15',
+          $lte: '2020-10-31'
+        }
+      }
+    },
+    {
+      $match: {
+        'task-notSubmitted.dueDate': {
+          $gte: '2020-10-15',
+          $lte: '2020-10-31'
+        },
+        'task-notSubmitted.submitted': false
+      }
+    },
+    { $project: { _id: 0, 'absent._id': 0 } },
+    { $project: { 'task-notSubmitted._id': 0 } }
+  ],
+  { maxTimeMS: 60000, allowDiskUse: true }
+);
